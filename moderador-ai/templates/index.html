@@ -6,94 +6,275 @@
   <title>Moderador de IAs</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style> pre { white-space: pre-wrap; word-break: break-word; } </style>
+  <style>
+    body {
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at top left, rgba(16, 185, 129, 0.18), transparent 55%),
+                  radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 55%),
+                  linear-gradient(180deg, #0f172a 0%, #020617 100%);
+      min-height: 100vh;
+    }
+    textarea {
+      resize: vertical;
+    }
+  </style>
 </head>
+<body class="text-slate-100">
+  <div class="max-w-7xl mx-auto px-4 py-12">
+    <header class="mb-12 text-center lg:text-left">
+      <h1 class="text-4xl font-semibold tracking-tight text-slate-50">Moderador de IAs</h1>
+      <p class="mt-4 text-lg text-slate-300 max-w-3xl">
+        Compare respostas de diferentes modelos e transforme pedidos em comandos técnicos claros com o módulo de interpretação integrado.
+      </p>
+    </header>
 
-<body class="bg-gray-900 text-gray-100 min-h-screen">
-  <div class="max-w-5xl mx-auto py-10 px-4">
-    <h1 class="text-3xl font-bold mb-6 text-center text-yellow-400">🧠 Moderador de IAs</h1>
+    <div class="grid gap-10 lg:grid-cols-3">
+      <section class="lg:col-span-1 bg-slate-900/80 border border-slate-700 rounded-3xl p-7 shadow-xl backdrop-blur">
+        <h2 class="text-2xl font-semibold text-slate-50">Intérprete de Comandos</h2>
+        <p class="mt-2 text-sm text-slate-300">
+          Traduza frases naturais em instruções técnicas completas antes da execução e descubra outras formas de expressá-las.
+        </p>
 
-    <textarea id="pergunta" placeholder="Digite sua pergunta aqui..." class="w-full p-3 rounded-lg bg-gray-800 text-white" rows="3"></textarea>
+        <label class="block mt-6 text-sm font-medium text-slate-200" for="comandoNatural">Descrição em linguagem natural</label>
+        <textarea id="comandoNatural" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500" rows="4" placeholder="Descreva o que deseja que o sistema faça..."></textarea>
 
-    <div class="flex gap-3 mt-3">
-      <button id="btnPerguntar" class="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-2 px-5 rounded-lg">Analisar</button>
-      <button id="btnFalar" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg">🎤 Perguntar por voz</button>
-    </div>
+        <div class="mt-6 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label class="block text-sm font-medium text-slate-200" for="idiomaSaida">Idioma de saída</label>
+            <select id="idiomaSaida" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950/70 p-3 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+              <option value="pt">Português</option>
+              <option value="en">Inglês</option>
+              <option value="es">Espanhol</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-200" for="entonacao">Entonação desejada</label>
+            <select id="entonacao" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950/70 p-3 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+              <option value="neutra">Neutra</option>
+              <option value="formal">Formal</option>
+              <option value="objetiva">Objetiva</option>
+              <option value="instrucional">Instrucional</option>
+              <option value="enfática">Enfática</option>
+            </select>
+          </div>
+        </div>
 
-    <div id="loading" class="mt-5 text-yellow-400 hidden animate-pulse">⏳ Consultando as IAs...</div>
+        <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+          <button id="btnGerarComando" class="flex-1 rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-300">Gerar instruções</button>
+          <button id="btnResetarComando" class="sm:w-40 rounded-xl border border-slate-600 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400">Limpar</button>
+        </div>
 
-    <div class="mt-8 space-y-4">
-      <div class="bg-gray-800 p-4 rounded-lg shadow"><h3 class="text-yellow-400 font-semibold">DeepSeek</h3><pre id="respDeepseek"></pre></div>
-      <div class="bg-gray-800 p-4 rounded-lg shadow"><h3 class="text-yellow-400 font-semibold">Grok</h3><pre id="respGrok"></pre></div>
-      <div class="bg-gray-800 p-4 rounded-lg shadow"><h3 class="text-yellow-400 font-semibold">Qwen3-Max</h3><pre id="respQwen"></pre></div>
-      <div class="bg-gray-800 p-4 rounded-lg shadow"><h3 class="text-yellow-400 font-semibold">OpenRouter</h3><pre id="respOpenRouter"></pre></div>
+        <p id="interpreteStatus" class="mt-4 text-sm text-slate-300"></p>
 
-      <div class="bg-yellow-100 text-gray-900 p-4 rounded-lg shadow">
-        <h3 class="font-bold text-xl">🧩 Análise do Moderador</h3>
-        <pre id="respAnalise"></pre>
-      </div>
+        <div class="mt-6 space-y-5">
+          <div>
+            <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Comando interpretado</span>
+            <textarea id="comandoGerado" class="mt-3 w-full rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-100 focus:outline-none" rows="4" readonly placeholder="O comando técnico aparecerá aqui."></textarea>
+          </div>
+          <div>
+            <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Outras formas de expressar</span>
+            <div id="variacoesLista" class="mt-3 space-y-3 text-sm text-slate-200">
+              <p class="text-slate-400">As variações serão exibidas após a interpretação.</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      <canvas id="chartConcordancia" width="400" height="120" class="mt-6"></canvas>
+      <section class="lg:col-span-2 bg-slate-900/80 border border-slate-700 rounded-3xl p-7 shadow-xl backdrop-blur">
+        <h2 class="text-2xl font-semibold text-slate-50">Comparador de Respostas</h2>
+        <p class="mt-2 text-sm text-slate-300">
+          Envie uma pergunta para analisar simultaneamente as respostas das IAs e obter uma síntese equilibrada.
+        </p>
+
+        <label class="block mt-6 text-sm font-medium text-slate-200" for="pergunta">Pergunta ou cenário</label>
+        <textarea id="pergunta" placeholder="Digite sua pergunta aqui..." class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="4"></textarea>
+
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+          <button id="btnPerguntar" class="flex-1 rounded-xl bg-indigo-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300">Analisar</button>
+          <button id="btnFalar" class="sm:w-48 rounded-xl border border-slate-600 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400">Perguntar por voz</button>
+        </div>
+
+        <div id="loading" class="mt-5 text-sm text-indigo-200 hidden">Consultando as IAs...</div>
+
+        <div class="mt-8 space-y-5">
+          <div class="grid gap-4 md:grid-cols-2">
+            <div class="rounded-2xl border border-slate-700 bg-slate-950/70 p-4 shadow-inner">
+              <h3 class="text-lg font-semibold text-cyan-300">DeepSeek</h3>
+              <pre id="respDeepseek" class="mt-3 text-sm text-slate-200 whitespace-pre-wrap break-words"></pre>
+            </div>
+            <div class="rounded-2xl border border-slate-700 bg-slate-950/70 p-4 shadow-inner">
+              <h3 class="text-lg font-semibold text-cyan-300">Grok</h3>
+              <pre id="respGrok" class="mt-3 text-sm text-slate-200 whitespace-pre-wrap break-words"></pre>
+            </div>
+            <div class="rounded-2xl border border-slate-700 bg-slate-950/70 p-4 shadow-inner">
+              <h3 class="text-lg font-semibold text-cyan-300">Qwen3-Max</h3>
+              <pre id="respQwen" class="mt-3 text-sm text-slate-200 whitespace-pre-wrap break-words"></pre>
+            </div>
+            <div class="rounded-2xl border border-slate-700 bg-slate-950/70 p-4 shadow-inner">
+              <h3 class="text-lg font-semibold text-cyan-300">OpenRouter</h3>
+              <pre id="respOpenRouter" class="mt-3 text-sm text-slate-200 whitespace-pre-wrap break-words"></pre>
+            </div>
+          </div>
+
+          <div class="rounded-3xl border border-emerald-500/40 bg-emerald-900/20 p-6 shadow-inner">
+            <h3 class="text-xl font-semibold text-emerald-200">Análise do Moderador</h3>
+            <pre id="respAnalise" class="mt-3 text-sm text-emerald-100 whitespace-pre-wrap break-words"></pre>
+          </div>
+
+          <div>
+            <canvas id="chartConcordancia" height="140"></canvas>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 
   <script>
-    // 🎤 Reconhecimento de voz
-    const recognizer = new(window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognizer.lang = "pt-BR";
-    recognizer.onresult = (event) => {
-      document.getElementById("pergunta").value = event.results[0][0].transcript;
-    };
-    document.getElementById("btnFalar").onclick = () => recognizer.start();
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognitionAPI) {
+      const recognizer = new SpeechRecognitionAPI();
+      recognizer.lang = "pt-BR";
+      recognizer.onresult = (event) => {
+        document.getElementById("pergunta").value = event.results[0][0].transcript;
+      };
+      document.getElementById("btnFalar").onclick = () => recognizer.start();
+    } else {
+      document.getElementById("btnFalar").classList.add("opacity-50", "cursor-not-allowed");
+      document.getElementById("btnFalar").textContent = "Recurso de voz indisponível";
+    }
 
-    // 🔊 Leitura de texto
     function lerAnalise(texto) {
-      const synth = window.speechSynthesis;
+      if (!window.speechSynthesis) return;
       const fala = new SpeechSynthesisUtterance(texto);
       fala.lang = "pt-BR";
-      synth.speak(fala);
+      window.speechSynthesis.speak(fala);
     }
 
-    // 📈 Atualiza gráfico
+    let graficoConcordancia = null;
     function atualizarGrafico(valor) {
-      new Chart(document.getElementById("chartConcordancia"), {
-        type: 'bar',
+      const ctx = document.getElementById("chartConcordancia").getContext("2d");
+      if (graficoConcordancia) {
+        graficoConcordancia.destroy();
+      }
+      graficoConcordancia = new Chart(ctx, {
+        type: "bar",
         data: {
-          labels: ["Concordância Geral"],
+          labels: ["Concordância geral"],
           datasets: [{
-            label: "% de Concordância entre IAs",
+            label: "% de concordância entre IAs",
             data: [valor],
-            backgroundColor: valor > 60 ? "rgb(34,197,94)" : "rgb(234,179,8)"
-          }]
+            backgroundColor: valor > 60 ? "rgb(34,197,94)" : "rgb(59,130,246)",
+          }],
         },
-        options: { scales: { y: { beginAtZero: true, max: 100 } } }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, max: 100 },
+          },
+        },
       });
     }
 
-    // 🚀 Envio da pergunta
     document.getElementById('btnPerguntar').addEventListener('click', async () => {
       const pergunta = document.getElementById('pergunta').value.trim();
-      if (!pergunta) { alert("Digite uma pergunta"); return; }
+      if (!pergunta) {
+        alert("Digite uma pergunta");
+        return;
+      }
 
       document.getElementById('loading').classList.remove('hidden');
-      ["respDeepseek","respGrok","respQwen","respOpenRouter","respAnalise"].forEach(id => document.getElementById(id).textContent = "");
-
-      const resp = await fetch('/analisar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pergunta })
+      ["respDeepseek","respGrok","respQwen","respOpenRouter","respAnalise"].forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento) elemento.textContent = "";
       });
 
-      const data = await resp.json();
-      document.getElementById('loading').classList.add('hidden');
+      try {
+        const resp = await fetch('/analisar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pergunta })
+        });
 
-      document.getElementById('respDeepseek').textContent = data.respostas.deepseek || "Sem resposta";
-      document.getElementById('respGrok').textContent = data.respostas.grok || "Sem resposta";
-      document.getElementById('respQwen').textContent = data.respostas.qwen3_max || "Sem resposta";
-      document.getElementById('respOpenRouter').textContent = data.respostas.openrouter || "Sem resposta";
-      document.getElementById('respAnalise').textContent = data.analise || "Sem análise";
-      atualizarGrafico(data.concordancia || 0);
-      lerAnalise(data.analise || "");
+        const data = await resp.json();
+        document.getElementById('loading').classList.add('hidden');
+
+        document.getElementById('respDeepseek').textContent = data.respostas.deepseek || "Sem resposta";
+        document.getElementById('respGrok').textContent = data.respostas.grok || "Sem resposta";
+        document.getElementById('respQwen').textContent = data.respostas.qwen3_max || "Sem resposta";
+        document.getElementById('respOpenRouter').textContent = data.respostas.openrouter || "Sem resposta";
+        document.getElementById('respAnalise').textContent = data.analise || "Sem análise";
+        atualizarGrafico(data.concordancia || 0);
+        if (data.analise) {
+          lerAnalise(data.analise);
+        }
+      } catch (erro) {
+        document.getElementById('loading').classList.add('hidden');
+        alert('Não foi possível obter as respostas. Tente novamente.');
+        console.error(erro);
+      }
+    });
+
+    const statusInterprete = document.getElementById('interpreteStatus');
+    const listaVariacoes = document.getElementById('variacoesLista');
+    const campoComandoGerado = document.getElementById('comandoGerado');
+
+    function atualizarVariacoes(variacoes) {
+      listaVariacoes.innerHTML = '';
+      if (!variacoes || variacoes.length === 0) {
+        listaVariacoes.innerHTML = '<p class="text-slate-400">Nenhuma variação disponível no momento.</p>';
+        return;
+      }
+
+      variacoes.forEach((texto) => {
+        const bloco = document.createElement('div');
+        bloco.className = 'rounded-2xl border border-slate-700 bg-slate-950/70 p-3 shadow-inner';
+        bloco.textContent = texto;
+        listaVariacoes.appendChild(bloco);
+      });
+    }
+
+    document.getElementById('btnGerarComando').addEventListener('click', async () => {
+      const texto = document.getElementById('comandoNatural').value.trim();
+      const idioma = document.getElementById('idiomaSaida').value;
+      const entonacao = document.getElementById('entonacao').value;
+
+      if (!texto) {
+        statusInterprete.textContent = 'Digite uma descrição para gerar o comando técnico.';
+        return;
+      }
+
+      statusInterprete.textContent = 'Gerando instruções técnicas...';
+      campoComandoGerado.value = '';
+      atualizarVariacoes([]);
+
+      try {
+        const resp = await fetch('/interpretar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ texto, idioma, entonacao })
+        });
+
+        const dados = await resp.json();
+        if (!resp.ok) {
+          statusInterprete.textContent = dados.erro || 'Não foi possível interpretar o comando.';
+          return;
+        }
+
+        campoComandoGerado.value = dados.comando || '';
+        atualizarVariacoes(dados.variacoes || []);
+        statusInterprete.textContent = 'Interpretação concluída.';
+      } catch (erro) {
+        statusInterprete.textContent = 'Ocorreu um erro ao interpretar o comando.';
+        console.error(erro);
+      }
+    });
+
+    document.getElementById('btnResetarComando').addEventListener('click', () => {
+      document.getElementById('comandoNatural').value = '';
+      campoComandoGerado.value = '';
+      atualizarVariacoes([]);
+      statusInterprete.textContent = '';
     });
   </script>
 </body>

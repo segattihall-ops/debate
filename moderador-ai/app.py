@@ -1,4 +1,5 @@
 import os
+import json
 from flask import Flask, request, jsonify, render_template
 import requests
 import concurrent.futures
@@ -7,7 +8,7 @@ import sqlite3
 app = Flask(__name__)
 
 # ============================
-# 🔑 SUAS CHAVES DE API
+# Configurações de chaves de API
 # ============================
 
 
@@ -28,7 +29,7 @@ QWEN3_MAX_API_KEY = get_api_key("QWEN3_MAX_API_KEY")
 OPENROUTER_API_KEY = get_api_key("OPENROUTER_API_KEY")
 
 # ============================
-# 🌐 ENDPOINTS
+# Configuração de endpoints
 # ============================
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 GROK_API_URL = "https://api.grok.com/v1/chat/completions"
@@ -37,7 +38,7 @@ OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 OPENROUTER_MODEL = "openai/gpt-4o-mini"
 
 # ============================
-# 📦 BANCO LOCAL
+# Banco local
 # ============================
 def init_db():
     conn = sqlite3.connect('history.db')
@@ -69,7 +70,7 @@ def salvar_historico(pergunta, respostas, analise, concordancia):
 
 
 # ============================
-# 🔧 FUNÇÃO GENÉRICA DE CHAMADA
+# Função genérica de chamada
 # ============================
 def call_api(url, api_key, model, prompt):
     """Faz chamada com cabeçalhos válidos para OpenRouter e debug."""
@@ -86,24 +87,17 @@ def call_api(url, api_key, model, prompt):
         "temperature": 0.7
     }
 
-    print(f"\n📡 Enviando para {url} | modelo: {model}")
-    print(f"🧠 Prompt:\n{prompt[:300]}...\n")
-
     try:
         response = requests.post(url, headers=headers, json=data, timeout=30)
-        print(f"🔁 Status: {response.status_code}")
         if response.status_code != 200:
-            print("⚠️ Erro recebido:", response.text)
             return f"[Erro {response.status_code}] {response.text}"
         conteudo = response.json()["choices"][0]["message"]["content"]
-        print(f"✅ Resposta: {conteudo[:100]}...\n")
         return conteudo
     except Exception as e:
-        print(f"❌ Exceção:", e)
         return f"Erro: {e}"
 
 # ============================
-# 🧠 ANÁLISE AUTOMÁTICA
+# Rotinas de análise
 # ============================
 def gerar_analise(pergunta, respostas):
     prompt = f"""
@@ -140,8 +134,73 @@ def calcular_concordancia(respostas):
     return int((iguais / len(respostas_text)) * 100)
 
 
+def gerar_interpretacao(texto, idioma, entonacao):
+    idiomas = {
+        "pt": {
+            "nome": "portuguese",
+            "detalhe": "Use português claro e natural com terminologia técnica quando necessário."
+        },
+        "en": {
+            "nome": "english",
+            "detalhe": "Write in concise international English suitable for technical documentation."
+        },
+        "es": {
+            "nome": "spanish",
+            "detalhe": "Use espanhol neutro, preciso e apropriado para times de tecnologia."
+        },
+    }
+
+    info_idioma = idiomas.get(idioma, idiomas["pt"])
+
+    prompt = f"""
+Act as a command interpreter that converts natural language feature requests into precise technical instructions before execution.
+
+Input request: "{texto.strip()}"
+Desired output language: {info_idioma['nome']}.
+Language guidance: {info_idioma['detalhe']}
+Tone guidance: {entonacao}.
+
+Return only a valid JSON object with the following structure:
+{{
+  "comando": "...",
+  "variacoes": ["...", "...", "..."]
+}}
+
+Requirements:
+- The field "comando" must contain a single, complete instruction ready to be executed or handed to a development team.
+- Capture the intent, context, constraints, and relevant interface or implementation details explicitly.
+- Provide three alternative phrasings in the "variacoes" array, in the same language, each maintaining the intent while exploring different wording.
+- Respect the requested tone while keeping the message objective and technically actionable.
+- Do not include backticks or any additional commentary outside the JSON.
+"""
+
+    resposta = call_api(OPENROUTER_API_URL, OPENROUTER_API_KEY, OPENROUTER_MODEL, prompt)
+
+    try:
+        interpretacao = json.loads(resposta)
+    except json.JSONDecodeError:
+        interpretacao = {
+            "comando": resposta.strip(),
+            "variacoes": []
+        }
+
+    comando = interpretacao.get("comando", "").strip()
+    variacoes = interpretacao.get("variacoes", [])
+    if isinstance(variacoes, str):
+        variacoes = [variacoes.strip()] if variacoes.strip() else []
+    elif isinstance(variacoes, list):
+        variacoes = [str(item).strip() for item in variacoes if str(item).strip()]
+    else:
+        variacoes = []
+
+    return {
+        "comando": comando,
+        "variacoes": variacoes
+    }
+
+
 # ============================
-# 🌍 ROTAS
+# Rotas
 # ============================
 @app.route("/")
 def index():
@@ -198,6 +257,20 @@ def analisar():
         "analise": analise,
         "concordancia": concordancia
     })
+
+
+@app.route("/interpretar", methods=["POST"])
+def interpretar():
+    data = request.json or {}
+    texto = (data.get("texto") or "").strip()
+    idioma = (data.get("idioma") or "pt").lower()
+    entonacao = (data.get("entonacao") or "neutro").strip()
+
+    if not texto:
+        return jsonify({"erro": "Forneça um texto para interpretação."}), 400
+
+    resultado = gerar_interpretacao(texto, idioma, entonacao)
+    return jsonify(resultado)
 
 
 if __name__ == "__main__":
