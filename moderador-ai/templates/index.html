@@ -1,127 +1,186 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Moderador de IAs</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background: radial-gradient(circle at top left, rgba(16, 185, 129, 0.18), transparent 55%),
-                  radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 55%),
-                  linear-gradient(180deg, #0f172a 0%, #020617 100%);
+      background: radial-gradient(circle at top left, rgba(16, 185, 129, 0.16), transparent 60%),
+                  radial-gradient(circle at top right, rgba(59, 130, 246, 0.16), transparent 60%),
+                  linear-gradient(180deg, #020617 0%, #00010a 100%);
       min-height: 100vh;
     }
+
     textarea {
       resize: vertical;
+    }
+
+    .loader {
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 999px;
+      border: 3px solid rgba(165, 180, 252, 0.35);
+      border-top-color: rgba(129, 140, 248, 1);
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .skeleton {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(110deg, rgba(148, 163, 184, 0.12) 8%, rgba(148, 163, 184, 0.24) 18%, rgba(148, 163, 184, 0.12) 33%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: -200% 0;
+      }
+      100% {
+        background-position: 200% 0;
+      }
     }
   </style>
 </head>
 <body class="text-slate-100">
-  <div class="max-w-7xl mx-auto px-4 py-12">
-    <header class="mb-12 text-center lg:text-left">
-      <h1 class="text-4xl font-semibold tracking-tight text-slate-50">Moderador de IAs</h1>
-      <p class="mt-4 text-lg text-slate-300 max-w-3xl">
-        Compare respostas de diferentes modelos e transforme pedidos em comandos técnicos claros com o módulo de interpretação integrado.
-      </p>
+  <div class="max-w-7xl mx-auto px-4 py-10 lg:py-14">
+    <header class="mb-12 lg:flex lg:items-start lg:justify-between">
+      <div class="max-w-3xl">
+        <h1 class="text-4xl font-semibold tracking-tight text-slate-50" data-i18n="app.title">Moderador de IAs</h1>
+        <p class="mt-4 text-lg text-slate-300" data-i18n="app.subtitle">
+          Compare respostas de diferentes modelos e transforme pedidos em comandos técnicos claros com o módulo de interpretação integrado.
+        </p>
+      </div>
+      <div class="mt-6 flex items-center gap-2 lg:mt-0">
+        <span class="text-sm font-semibold text-slate-300" data-i18n="app.languageLabel">Idioma</span>
+        <div class="flex rounded-full border border-slate-700 bg-slate-900/60 p-1" role="group" aria-label="Language selector">
+          <button type="button" class="lang-switch rounded-full px-4 py-1.5 text-xs font-semibold text-slate-300 transition bg-slate-800" data-lang="pt">Português</button>
+          <button type="button" class="lang-switch rounded-full px-4 py-1.5 text-xs font-semibold text-slate-300 transition" data-lang="en">English</button>
+          <button type="button" class="lang-switch rounded-full px-4 py-1.5 text-xs font-semibold text-slate-300 transition" data-lang="es">Español</button>
+        </div>
+      </div>
     </header>
 
     <div class="grid gap-10 lg:grid-cols-3">
-      <section class="lg:col-span-1 bg-slate-900/80 border border-slate-700 rounded-3xl p-7 shadow-xl backdrop-blur">
-        <h2 class="text-2xl font-semibold text-slate-50">Intérprete de Comandos</h2>
-        <p class="mt-2 text-sm text-slate-300">
+      <section class="lg:col-span-1 bg-slate-900/80 border border-slate-800 rounded-3xl p-7 shadow-xl backdrop-blur">
+        <h2 class="text-2xl font-semibold text-slate-50" data-i18n="interpreter.title">Intérprete de Comandos</h2>
+        <p class="mt-2 text-sm text-slate-300" data-i18n="interpreter.description">
           Traduza frases naturais em instruções técnicas completas antes da execução e descubra outras formas de expressá-las.
         </p>
 
-        <label class="block mt-6 text-sm font-medium text-slate-200" for="comandoNatural">Descrição em linguagem natural</label>
-        <textarea id="comandoNatural" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500" rows="4" placeholder="Descreva o que deseja que o sistema faça..."></textarea>
+        <label class="block mt-6 text-sm font-medium text-slate-200" for="descricaoNatural" data-i18n="interpreter.inputLabel">Descrição em linguagem natural</label>
+        <textarea id="descricaoNatural" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500" rows="4" data-i18n-placeholder="interpreter.inputPlaceholder" placeholder="Descreva o que deseja que o sistema faça..."></textarea>
 
         <div class="mt-6 grid gap-4 sm:grid-cols-2">
           <div>
-            <label class="block text-sm font-medium text-slate-200" for="idiomaSaida">Idioma de saída</label>
+            <label class="block text-sm font-medium text-slate-200" for="idiomaSaida" data-i18n="interpreter.languageLabel">Idioma de saída</label>
             <select id="idiomaSaida" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950/70 p-3 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500">
-              <option value="pt">Português</option>
-              <option value="en">Inglês</option>
-              <option value="es">Espanhol</option>
+              <option value="pt" data-i18n="interpreter.language.pt">Português</option>
+              <option value="en" data-i18n="interpreter.language.en">Inglês</option>
+              <option value="es" data-i18n="interpreter.language.es">Espanhol</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-slate-200" for="entonacao">Entonação desejada</label>
+            <label class="block text-sm font-medium text-slate-200" for="entonacao" data-i18n="interpreter.toneLabel">Entonação desejada</label>
             <select id="entonacao" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950/70 p-3 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500">
-              <option value="neutra">Neutra</option>
-              <option value="formal">Formal</option>
-              <option value="objetiva">Objetiva</option>
-              <option value="instrucional">Instrucional</option>
-              <option value="enfática">Enfática</option>
+              <option value="neutra" data-i18n="interpreter.tone.neutral">Neutra</option>
+              <option value="formal" data-i18n="interpreter.tone.formal">Formal</option>
+              <option value="objetiva" data-i18n="interpreter.tone.objective">Objetiva</option>
+              <option value="instrucional" data-i18n="interpreter.tone.instructional">Instrucional</option>
+              <option value="enfatica" data-i18n="interpreter.tone.emphatic">Enfática</option>
             </select>
           </div>
         </div>
 
-        <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-          <button id="btnGerarComando" class="flex-1 rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-300">Gerar instruções</button>
-          <button id="btnResetarComando" class="sm:w-40 rounded-xl border border-slate-600 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400">Limpar</button>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <button id="btnInterpretar" class="rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-300" data-i18n="interpreter.generateButton">Gerar instrução</button>
+          <button id="btnUsarComoPergunta" type="button" class="rounded-xl bg-amber-400/90 px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-50" disabled data-i18n="interpreter.transferButton">Usar como pergunta principal</button>
+          <button id="btnResetInterpretar" type="button" class="rounded-xl border border-slate-600 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-slate-400" data-i18n="interpreter.resetButton">Limpar</button>
         </div>
 
-        <p id="interpreteStatus" class="mt-4 text-sm text-slate-300"></p>
+        <p id="interpreteStatus" class="mt-4 text-sm text-slate-300 min-h-[1.5rem]"></p>
 
         <div class="mt-6 space-y-5">
           <div>
-            <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Comando interpretado</span>
-            <textarea id="comandoGerado" class="mt-3 w-full rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-100 focus:outline-none" rows="4" readonly placeholder="O comando técnico aparecerá aqui."></textarea>
+            <span class="text-xs font-semibold uppercase tracking-wide text-slate-400" data-i18n="interpreter.commandTitle">Comando interpretado</span>
+            <textarea id="resultadoComando" class="mt-3 w-full rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-100 focus:outline-none" rows="4" readonly data-i18n-placeholder="interpreter.commandPlaceholder" placeholder="O comando técnico aparecerá aqui."></textarea>
           </div>
           <div>
-            <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Outras formas de expressar</span>
-            <div id="variacoesLista" class="mt-3 space-y-3 text-sm text-slate-200">
-              <p class="text-slate-400">As variações serão exibidas após a interpretação.</p>
+            <span class="text-xs font-semibold uppercase tracking-wide text-slate-400" data-i18n="interpreter.variationsTitle">Outras formas de expressar</span>
+            <div id="alternativasComando" class="mt-3 space-y-3 text-sm text-slate-200">
+              <p class="text-slate-400" data-i18n="interpreter.variationsPlaceholder">As variações serão exibidas após a interpretação.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="lg:col-span-2 bg-slate-900/80 border border-slate-700 rounded-3xl p-7 shadow-xl backdrop-blur">
-        <h2 class="text-2xl font-semibold text-slate-50">Comparador de Respostas</h2>
-        <p class="mt-2 text-sm text-slate-300">
+      <section class="lg:col-span-2 bg-slate-900/80 border border-slate-800 rounded-3xl p-7 shadow-xl backdrop-blur">
+        <h2 class="text-2xl font-semibold text-slate-50" data-i18n="analysis.title">Comparador de Respostas</h2>
+        <p class="mt-2 text-sm text-slate-300" data-i18n="analysis.description">
           Envie uma pergunta para analisar simultaneamente as respostas das IAs e obter uma síntese equilibrada.
         </p>
 
-        <label class="block mt-6 text-sm font-medium text-slate-200" for="pergunta">Pergunta ou cenário</label>
-        <textarea id="pergunta" placeholder="Digite sua pergunta aqui..." class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="4"></textarea>
+        <label class="block mt-6 text-sm font-medium text-slate-200" for="pergunta" data-i18n="analysis.promptLabel">Pergunta ou cenário</label>
+        <textarea id="pergunta" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" rows="4" data-i18n-placeholder="analysis.promptPlaceholder" placeholder="Digite sua pergunta aqui..."></textarea>
 
         <div class="mt-6 flex flex-col gap-3 sm:flex-row">
-          <button id="btnPerguntar" class="flex-1 rounded-xl bg-indigo-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300">Analisar</button>
-          <button id="btnFalar" class="sm:w-48 rounded-xl border border-slate-600 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400">Perguntar por voz</button>
+          <button id="btnPerguntar" class="flex-1 rounded-xl bg-indigo-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300" data-i18n="analysis.askButton">Analisar</button>
+          <button id="btnFalar" class="sm:w-48 rounded-xl border border-slate-600 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400" data-i18n="analysis.voiceButton">Perguntar por voz</button>
         </div>
 
-        <div id="loading" class="mt-5 text-sm text-indigo-200 hidden">Consultando as IAs...</div>
+        <div id="loading" class="mt-6 hidden items-center gap-3 text-sm text-indigo-200">
+          <span class="loader"></span>
+          <span data-i18n="analysis.loading">Consultando as IAs...</span>
+        </div>
 
-        <div class="mt-8 space-y-5">
+        <div class="mt-8 space-y-6">
           <div class="grid gap-4 md:grid-cols-2">
             <div class="rounded-2xl border border-slate-700 bg-slate-950/70 p-4 shadow-inner">
               <h3 class="text-lg font-semibold text-cyan-300">DeepSeek</h3>
-              <pre id="respDeepseek" class="mt-3 text-sm text-slate-200 whitespace-pre-wrap break-words"></pre>
+              <pre id="respDeepseek" class="mt-3 min-h-[6rem] text-sm text-slate-200 whitespace-pre-wrap break-words"></pre>
             </div>
             <div class="rounded-2xl border border-slate-700 bg-slate-950/70 p-4 shadow-inner">
               <h3 class="text-lg font-semibold text-cyan-300">Grok</h3>
-              <pre id="respGrok" class="mt-3 text-sm text-slate-200 whitespace-pre-wrap break-words"></pre>
+              <pre id="respGrok" class="mt-3 min-h-[6rem] text-sm text-slate-200 whitespace-pre-wrap break-words"></pre>
             </div>
             <div class="rounded-2xl border border-slate-700 bg-slate-950/70 p-4 shadow-inner">
               <h3 class="text-lg font-semibold text-cyan-300">Qwen3-Max</h3>
-              <pre id="respQwen" class="mt-3 text-sm text-slate-200 whitespace-pre-wrap break-words"></pre>
+              <pre id="respQwen" class="mt-3 min-h-[6rem] text-sm text-slate-200 whitespace-pre-wrap break-words"></pre>
             </div>
             <div class="rounded-2xl border border-slate-700 bg-slate-950/70 p-4 shadow-inner">
               <h3 class="text-lg font-semibold text-cyan-300">OpenRouter</h3>
-              <pre id="respOpenRouter" class="mt-3 text-sm text-slate-200 whitespace-pre-wrap break-words"></pre>
+              <pre id="respOpenRouter" class="mt-3 min-h-[6rem] text-sm text-slate-200 whitespace-pre-wrap break-words"></pre>
             </div>
           </div>
 
           <div class="rounded-3xl border border-emerald-500/40 bg-emerald-900/20 p-6 shadow-inner">
-            <h3 class="text-xl font-semibold text-emerald-200">Análise do Moderador</h3>
-            <pre id="respAnalise" class="mt-3 text-sm text-emerald-100 whitespace-pre-wrap break-words"></pre>
+            <h3 class="text-xl font-semibold text-emerald-200" data-i18n="analysis.moderatorTitle">Análise do moderador</h3>
+            <pre id="respAnalise" class="mt-3 min-h-[6rem] text-sm text-emerald-100 whitespace-pre-wrap break-words"></pre>
+
+            <div id="feedbackVotacao" class="mt-6 hidden border-t border-emerald-500/30 pt-4">
+              <p class="text-sm font-semibold text-emerald-100" data-i18n="analysis.votingQuestion">Concorda com a conclusão apresentada?</p>
+              <div class="mt-3 flex flex-wrap gap-3">
+                <button id="btnVotoSim" data-voto="sim" class="rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-200">Concordo</button>
+                <button id="btnVotoNao" data-voto="nao" class="rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-200">Discordo</button>
+              </div>
+              <p id="votoStatus" class="mt-2 text-xs text-emerald-200"></p>
+            </div>
           </div>
 
-          <div>
+          <div class="rounded-3xl border border-slate-700 bg-slate-950/70 p-6">
             <canvas id="chartConcordancia" height="140"></canvas>
           </div>
         </div>
@@ -130,63 +189,355 @@
   </div>
 
   <script>
+    const translations = {
+      pt: {
+        'app.title': 'Moderador de IAs',
+        'app.subtitle': 'Compare respostas de diferentes modelos e transforme pedidos em comandos técnicos claros com o módulo de interpretação integrado.',
+        'app.languageLabel': 'Idioma',
+        'interpreter.title': 'Intérprete de Comandos',
+        'interpreter.description': 'Traduza frases naturais em instruções técnicas completas antes da execução e descubra outras formas de expressá-las.',
+        'interpreter.inputLabel': 'Descrição em linguagem natural',
+        'interpreter.inputPlaceholder': 'Descreva o que deseja que o sistema faça...',
+        'interpreter.languageLabel': 'Idioma de saída',
+        'interpreter.language.pt': 'Português',
+        'interpreter.language.en': 'Inglês',
+        'interpreter.language.es': 'Espanhol',
+        'interpreter.toneLabel': 'Entonação desejada',
+        'interpreter.tone.neutral': 'Neutra',
+        'interpreter.tone.formal': 'Formal',
+        'interpreter.tone.objective': 'Objetiva',
+        'interpreter.tone.instructional': 'Instrucional',
+        'interpreter.tone.emphatic': 'Enfática',
+        'interpreter.generateButton': 'Gerar instrução',
+        'interpreter.transferButton': 'Usar como pergunta principal',
+        'interpreter.resetButton': 'Limpar',
+        'interpreter.commandTitle': 'Comando interpretado',
+        'interpreter.commandPlaceholder': 'O comando técnico aparecerá aqui.',
+        'interpreter.variationsTitle': 'Outras formas de expressar',
+        'interpreter.variationsPlaceholder': 'As variações serão exibidas após a interpretação.',
+        'interpreter.statusPromptMissing': 'Digite uma descrição para gerar o comando técnico.',
+        'interpreter.statusGenerating': 'Gerando instruções técnicas...',
+        'interpreter.statusSuccess': 'Interpretação concluída.',
+        'interpreter.statusError': 'Ocorreu um erro ao interpretar o comando.',
+        'analysis.title': 'Comparador de Respostas',
+        'analysis.description': 'Envie uma pergunta para analisar simultaneamente as respostas das IAs e obter uma síntese equilibrada.',
+        'analysis.promptLabel': 'Pergunta ou cenário',
+        'analysis.promptPlaceholder': 'Digite sua pergunta aqui...',
+        'analysis.askButton': 'Analisar',
+        'analysis.voiceButton': 'Perguntar por voz',
+        'analysis.voiceUnavailable': 'Recurso de voz indisponível',
+        'analysis.loading': 'Consultando as IAs...',
+        'analysis.moderatorTitle': 'Análise do moderador',
+        'analysis.noAnswer': 'Sem resposta disponível',
+        'analysis.noAnalysis': 'Sem análise gerada',
+        'analysis.votingQuestion': 'Concorda com a conclusão apresentada?',
+        'analysis.voteYes': 'Concordo',
+        'analysis.voteNo': 'Discordo',
+        'analysis.voteRecording': 'Registrando voto...',
+        'analysis.voteSuccessYes': 'Obrigado! Seu voto de concordância foi registrado.',
+        'analysis.voteSuccessNo': 'Obrigado! Seu voto de discordância foi registrado.',
+        'analysis.voteError': 'Erro ao registrar voto.',
+        'analysis.voteCommunicationError': 'Erro de comunicação ao registrar voto.',
+        'analysis.promptRequired': 'Digite uma pergunta.',
+        'analysis.fetchError': 'Não foi possível obter as respostas. Tente novamente.',
+        'analysis.chartLabel': '% de concordância entre IAs',
+      },
+      en: {
+        'app.title': 'AI Moderator',
+        'app.subtitle': 'Compare responses from multiple models and turn user requests into clear technical commands with the interpreter module.',
+        'app.languageLabel': 'Language',
+        'interpreter.title': 'Command Interpreter',
+        'interpreter.description': 'Translate natural language ideas into comprehensive technical instructions and explore alternative phrasings.',
+        'interpreter.inputLabel': 'Natural language description',
+        'interpreter.inputPlaceholder': 'Describe what you would like the system to do...',
+        'interpreter.languageLabel': 'Output language',
+        'interpreter.language.pt': 'Portuguese',
+        'interpreter.language.en': 'English',
+        'interpreter.language.es': 'Spanish',
+        'interpreter.toneLabel': 'Preferred tone',
+        'interpreter.tone.neutral': 'Neutral',
+        'interpreter.tone.formal': 'Formal',
+        'interpreter.tone.objective': 'Objective',
+        'interpreter.tone.instructional': 'Instructional',
+        'interpreter.tone.emphatic': 'Emphatic',
+        'interpreter.generateButton': 'Generate instruction',
+        'interpreter.transferButton': 'Use as main question',
+        'interpreter.resetButton': 'Clear',
+        'interpreter.commandTitle': 'Interpreted command',
+        'interpreter.commandPlaceholder': 'The technical command will appear here.',
+        'interpreter.variationsTitle': 'Alternative phrasings',
+        'interpreter.variationsPlaceholder': 'Variations will be listed after interpreting.',
+        'interpreter.statusPromptMissing': 'Enter a description to generate the technical command.',
+        'interpreter.statusGenerating': 'Generating technical instructions...',
+        'interpreter.statusSuccess': 'Interpretation completed.',
+        'interpreter.statusError': 'Could not interpret the command.',
+        'analysis.title': 'Answer Comparator',
+        'analysis.description': 'Send a question to review AI answers side by side and receive a balanced synthesis.',
+        'analysis.promptLabel': 'Question or scenario',
+        'analysis.promptPlaceholder': 'Type your question here...',
+        'analysis.askButton': 'Analyze',
+        'analysis.voiceButton': 'Ask by voice',
+        'analysis.voiceUnavailable': 'Voice feature unavailable',
+        'analysis.loading': 'Querying the AIs...',
+        'analysis.moderatorTitle': 'Moderator analysis',
+        'analysis.noAnswer': 'No answer available',
+        'analysis.noAnalysis': 'No analysis generated',
+        'analysis.votingQuestion': 'Do you agree with the conclusion?',
+        'analysis.voteYes': 'Agree',
+        'analysis.voteNo': 'Disagree',
+        'analysis.voteRecording': 'Recording vote...',
+        'analysis.voteSuccessYes': 'Thanks! Your agreement was recorded.',
+        'analysis.voteSuccessNo': 'Thanks! Your disagreement was recorded.',
+        'analysis.voteError': 'Error while registering vote.',
+        'analysis.voteCommunicationError': 'Communication error while registering vote.',
+        'analysis.promptRequired': 'Enter a question.',
+        'analysis.fetchError': 'We could not fetch the answers. Please try again.',
+        'analysis.chartLabel': 'Agreement across AIs (%)',
+      },
+      es: {
+        'app.title': 'Moderador de IAs',
+        'app.subtitle': 'Compara respuestas de distintos modelos y transforma solicitudes en comandos técnicos claros con el módulo de interpretación.',
+        'app.languageLabel': 'Idioma',
+        'interpreter.title': 'Intérprete de Comandos',
+        'interpreter.description': 'Traduce ideas en lenguaje natural a instrucciones técnicas completas y descubre otras formas de expresarlas.',
+        'interpreter.inputLabel': 'Descripción en lenguaje natural',
+        'interpreter.inputPlaceholder': 'Describe lo que deseas que haga el sistema...',
+        'interpreter.languageLabel': 'Idioma de salida',
+        'interpreter.language.pt': 'Portugués',
+        'interpreter.language.en': 'Inglés',
+        'interpreter.language.es': 'Español',
+        'interpreter.toneLabel': 'Entonación deseada',
+        'interpreter.tone.neutral': 'Neutra',
+        'interpreter.tone.formal': 'Formal',
+        'interpreter.tone.objective': 'Objetiva',
+        'interpreter.tone.instructional': 'Instruccional',
+        'interpreter.tone.emphatic': 'Enfática',
+        'interpreter.generateButton': 'Generar instrucción',
+        'interpreter.transferButton': 'Usar como pregunta principal',
+        'interpreter.resetButton': 'Limpiar',
+        'interpreter.commandTitle': 'Comando interpretado',
+        'interpreter.commandPlaceholder': 'El comando técnico aparecerá aquí.',
+        'interpreter.variationsTitle': 'Otras formas de expresarlo',
+        'interpreter.variationsPlaceholder': 'Las variaciones se mostrarán tras la interpretación.',
+        'interpreter.statusPromptMissing': 'Escribe una descripción para generar el comando técnico.',
+        'interpreter.statusGenerating': 'Generando instrucciones técnicas...',
+        'interpreter.statusSuccess': 'Interpretación finalizada.',
+        'interpreter.statusError': 'No se pudo interpretar el comando.',
+        'analysis.title': 'Comparador de Respuestas',
+        'analysis.description': 'Envía una pregunta para analizar simultáneamente las respuestas de las IAs y obtener una síntesis equilibrada.',
+        'analysis.promptLabel': 'Pregunta o escenario',
+        'analysis.promptPlaceholder': 'Escribe tu pregunta aquí...',
+        'analysis.askButton': 'Analizar',
+        'analysis.voiceButton': 'Preguntar por voz',
+        'analysis.voiceUnavailable': 'Función de voz no disponible',
+        'analysis.loading': 'Consultando a las IAs...',
+        'analysis.moderatorTitle': 'Análisis del moderador',
+        'analysis.noAnswer': 'Sin respuesta disponible',
+        'analysis.noAnalysis': 'Sin análisis generado',
+        'analysis.votingQuestion': '¿Estás de acuerdo con la conclusión?',
+        'analysis.voteYes': 'De acuerdo',
+        'analysis.voteNo': 'En desacuerdo',
+        'analysis.voteRecording': 'Registrando voto...',
+        'analysis.voteSuccessYes': '¡Gracias! Tu voto de acuerdo fue registrado.',
+        'analysis.voteSuccessNo': '¡Gracias! Tu voto de desacuerdo fue registrado.',
+        'analysis.voteError': 'Error al registrar el voto.',
+        'analysis.voteCommunicationError': 'Error de comunicación al registrar el voto.',
+        'analysis.promptRequired': 'Escribe una pregunta.',
+        'analysis.fetchError': 'No fue posible obtener las respuestas. Inténtalo nuevamente.',
+        'analysis.chartLabel': 'Porcentaje de concordancia entre IAs',
+      }
+    };
+
+    const recognitionLocales = {
+      pt: 'pt-BR',
+      en: 'en-US',
+      es: 'es-ES',
+    };
+
+    let currentLanguage = 'pt';
+    let graficoConcordancia = null;
+    let ultimoValorConcordancia = 0;
+    let currentRegistroId = null;
+
+    function t(key) {
+      return translations[currentLanguage][key] || key;
+    }
+
+    function applyTranslations() {
+      document.documentElement.lang = currentLanguage === 'pt' ? 'pt-BR' : currentLanguage;
+      document.title = t('app.title');
+
+      document.querySelectorAll('[data-i18n]').forEach((el) => {
+        const key = el.getAttribute('data-i18n');
+        if (key && translations[currentLanguage][key]) {
+          el.textContent = translations[currentLanguage][key];
+        }
+      });
+
+      document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (key && translations[currentLanguage][key]) {
+          el.setAttribute('placeholder', translations[currentLanguage][key]);
+        }
+      });
+
+      const btnFalar = document.getElementById('btnFalar');
+      if (btnFalar) {
+        btnFalar.textContent = SpeechRecognitionAPI ? t('analysis.voiceButton') : t('analysis.voiceUnavailable');
+      }
+
+      document.querySelectorAll('#btnVotoSim, #btnVotoNao').forEach((button) => {
+        const voto = button.getAttribute('data-voto');
+        button.textContent = voto === 'sim' ? t('analysis.voteYes') : t('analysis.voteNo');
+      });
+
+      document.querySelectorAll('.lang-switch').forEach((btn) => {
+        btn.classList.toggle('bg-slate-800', btn.dataset.lang === currentLanguage);
+      });
+
+      if (graficoConcordancia) {
+        atualizarGrafico(ultimoValorConcordancia);
+      }
+
+      if (SpeechRecognitionAPI && recognizer) {
+        recognizer.lang = recognitionLocales[currentLanguage] || 'pt-BR';
+      }
+    }
+
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognizer = null;
     if (SpeechRecognitionAPI) {
-      const recognizer = new SpeechRecognitionAPI();
-      recognizer.lang = "pt-BR";
+      recognizer = new SpeechRecognitionAPI();
+      recognizer.lang = recognitionLocales[currentLanguage];
       recognizer.onresult = (event) => {
-        document.getElementById("pergunta").value = event.results[0][0].transcript;
+        document.getElementById('pergunta').value = event.results[0][0].transcript;
       };
-      document.getElementById("btnFalar").onclick = () => recognizer.start();
+      document.getElementById('btnFalar').onclick = () => recognizer.start();
     } else {
-      document.getElementById("btnFalar").classList.add("opacity-50", "cursor-not-allowed");
-      document.getElementById("btnFalar").textContent = "Recurso de voz indisponível";
+      const btnFalar = document.getElementById('btnFalar');
+      btnFalar.classList.add('opacity-50', 'cursor-not-allowed');
+      btnFalar.textContent = t('analysis.voiceUnavailable');
     }
 
     function lerAnalise(texto) {
       if (!window.speechSynthesis) return;
       const fala = new SpeechSynthesisUtterance(texto);
-      fala.lang = "pt-BR";
+      fala.lang = recognitionLocales[currentLanguage] || 'pt-BR';
       window.speechSynthesis.speak(fala);
     }
 
-    let graficoConcordancia = null;
     function atualizarGrafico(valor) {
-      const ctx = document.getElementById("chartConcordancia").getContext("2d");
+      ultimoValorConcordancia = valor;
+      const ctx = document.getElementById('chartConcordancia').getContext('2d');
       if (graficoConcordancia) {
         graficoConcordancia.destroy();
       }
       graficoConcordancia = new Chart(ctx, {
-        type: "bar",
+        type: 'bar',
         data: {
-          labels: ["Concordância geral"],
+          labels: [''],
           datasets: [{
-            label: "% de concordância entre IAs",
+            label: t('analysis.chartLabel'),
             data: [valor],
-            backgroundColor: valor > 60 ? "rgb(34,197,94)" : "rgb(59,130,246)",
+            backgroundColor: valor >= 60 ? 'rgb(34,197,94)' : 'rgb(59,130,246)',
+            borderRadius: 12,
+            maxBarThickness: 80,
           }],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           scales: {
-            y: { beginAtZero: true, max: 100 },
+            y: {
+              beginAtZero: true,
+              max: 100,
+              ticks: {
+                color: '#cbd5f5',
+                stepSize: 20,
+              },
+              grid: {
+                color: 'rgba(148, 163, 184, 0.25)',
+              },
+            },
+            x: {
+              ticks: { display: false },
+              grid: { display: false },
+            },
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: '#cbd5f5',
+              },
+            },
           },
         },
       });
     }
 
+    async function enviarVoto(id, tipo) {
+      const status = document.getElementById('votoStatus');
+      status.textContent = t('analysis.voteRecording');
+      try {
+        const resposta = await fetch('/votar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, voto: tipo })
+        });
+        const data = await resposta.json();
+        if (resposta.ok && data.success) {
+          status.textContent = tipo === 'sim' ? t('analysis.voteSuccessYes') : t('analysis.voteSuccessNo');
+        } else {
+          status.textContent = t('analysis.voteError');
+        }
+      } catch (error) {
+        status.textContent = t('analysis.voteCommunicationError');
+      }
+      document.getElementById('btnVotoSim').disabled = true;
+      document.getElementById('btnVotoNao').disabled = true;
+    }
+
+    document.getElementById('btnVotoSim').addEventListener('click', () => {
+      if (currentRegistroId) enviarVoto(currentRegistroId, 'sim');
+    });
+    document.getElementById('btnVotoNao').addEventListener('click', () => {
+      if (currentRegistroId) enviarVoto(currentRegistroId, 'nao');
+    });
+
+    document.querySelectorAll('.lang-switch').forEach((button) => {
+      button.addEventListener('click', () => {
+        currentLanguage = button.dataset.lang;
+        applyTranslations();
+        const btnFalar = document.getElementById('btnFalar');
+        if (!SpeechRecognitionAPI) {
+          btnFalar.textContent = t('analysis.voiceUnavailable');
+        } else {
+          btnFalar.textContent = t('analysis.voiceButton');
+        }
+      });
+    });
+
     document.getElementById('btnPerguntar').addEventListener('click', async () => {
       const pergunta = document.getElementById('pergunta').value.trim();
       if (!pergunta) {
-        alert("Digite uma pergunta");
+        alert(t('analysis.promptRequired'));
         return;
       }
 
+      currentRegistroId = null;
+      document.getElementById('feedbackVotacao').classList.add('hidden');
+      document.getElementById('votoStatus').textContent = '';
+      document.getElementById('btnVotoSim').disabled = false;
+      document.getElementById('btnVotoNao').disabled = false;
+
       document.getElementById('loading').classList.remove('hidden');
-      ["respDeepseek","respGrok","respQwen","respOpenRouter","respAnalise"].forEach(id => {
+      ['respDeepseek','respGrok','respQwen','respOpenRouter','respAnalise'].forEach((id) => {
         const elemento = document.getElementById(id);
-        if (elemento) elemento.textContent = "";
+        if (elemento) {
+          elemento.textContent = '';
+          elemento.classList.add('skeleton');
+          elemento.style.minHeight = '6rem';
+        }
       });
 
       try {
@@ -197,32 +548,53 @@
         });
 
         const data = await resp.json();
+
+        ['respDeepseek','respGrok','respQwen','respOpenRouter','respAnalise'].forEach((id) => {
+          const elemento = document.getElementById(id);
+          elemento.classList.remove('skeleton');
+        });
+
         document.getElementById('loading').classList.add('hidden');
 
-        document.getElementById('respDeepseek').textContent = data.respostas.deepseek || "Sem resposta";
-        document.getElementById('respGrok').textContent = data.respostas.grok || "Sem resposta";
-        document.getElementById('respQwen').textContent = data.respostas.qwen3_max || "Sem resposta";
-        document.getElementById('respOpenRouter').textContent = data.respostas.openrouter || "Sem resposta";
-        document.getElementById('respAnalise').textContent = data.analise || "Sem análise";
+        document.getElementById('respDeepseek').textContent = data.respostas?.deepseek || t('analysis.noAnswer');
+        document.getElementById('respGrok').textContent = data.respostas?.grok || t('analysis.noAnswer');
+        document.getElementById('respQwen').textContent = data.respostas?.qwen3_max || t('analysis.noAnswer');
+        document.getElementById('respOpenRouter').textContent = data.respostas?.openrouter || t('analysis.noAnswer');
+        document.getElementById('respAnalise').textContent = data.analise || t('analysis.noAnalysis');
         atualizarGrafico(data.concordancia || 0);
         if (data.analise) {
           lerAnalise(data.analise);
         }
+
+        currentRegistroId = data.registro_id;
+        if (currentRegistroId) {
+          document.getElementById('feedbackVotacao').classList.remove('hidden');
+          document.getElementById('votoStatus').textContent = '';
+          document.getElementById('btnVotoSim').disabled = false;
+          document.getElementById('btnVotoNao').disabled = false;
+        }
       } catch (erro) {
         document.getElementById('loading').classList.add('hidden');
-        alert('Não foi possível obter as respostas. Tente novamente.');
+        ['respDeepseek','respGrok','respQwen','respOpenRouter','respAnalise'].forEach((id) => {
+          const elemento = document.getElementById(id);
+          elemento.classList.remove('skeleton');
+        });
+        alert(t('analysis.fetchError'));
         console.error(erro);
       }
     });
 
-    const statusInterprete = document.getElementById('interpreteStatus');
-    const listaVariacoes = document.getElementById('variacoesLista');
-    const campoComandoGerado = document.getElementById('comandoGerado');
+    const interpretStatus = document.getElementById('interpreteStatus');
+    const alternativasComando = document.getElementById('alternativasComando');
+    const resultadoComando = document.getElementById('resultadoComando');
 
     function atualizarVariacoes(variacoes) {
-      listaVariacoes.innerHTML = '';
+      alternativasComando.innerHTML = '';
       if (!variacoes || variacoes.length === 0) {
-        listaVariacoes.innerHTML = '<p class="text-slate-400">Nenhuma variação disponível no momento.</p>';
+        const aviso = document.createElement('p');
+        aviso.className = 'text-slate-400';
+        aviso.textContent = t('interpreter.variationsPlaceholder');
+        alternativasComando.appendChild(aviso);
         return;
       }
 
@@ -230,52 +602,70 @@
         const bloco = document.createElement('div');
         bloco.className = 'rounded-2xl border border-slate-700 bg-slate-950/70 p-3 shadow-inner';
         bloco.textContent = texto;
-        listaVariacoes.appendChild(bloco);
+        alternativasComando.appendChild(bloco);
       });
     }
 
-    document.getElementById('btnGerarComando').addEventListener('click', async () => {
-      const texto = document.getElementById('comandoNatural').value.trim();
+    document.getElementById('btnInterpretar').addEventListener('click', async () => {
+      const texto = document.getElementById('descricaoNatural').value.trim();
       const idioma = document.getElementById('idiomaSaida').value;
       const entonacao = document.getElementById('entonacao').value;
 
       if (!texto) {
-        statusInterprete.textContent = 'Digite uma descrição para gerar o comando técnico.';
+        interpretStatus.textContent = t('interpreter.statusPromptMissing');
         return;
       }
 
-      statusInterprete.textContent = 'Gerando instruções técnicas...';
-      campoComandoGerado.value = '';
+      interpretStatus.textContent = t('interpreter.statusGenerating');
+      resultadoComando.value = '';
       atualizarVariacoes([]);
+      document.getElementById('btnUsarComoPergunta').disabled = true;
 
       try {
-        const resp = await fetch('/interpretar', {
+        const resposta = await fetch('/interpretar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ texto, idioma, entonacao })
         });
 
-        const dados = await resp.json();
-        if (!resp.ok) {
-          statusInterprete.textContent = dados.erro || 'Não foi possível interpretar o comando.';
+        const dados = await resposta.json();
+        if (!resposta.ok) {
+          interpretStatus.textContent = dados.erro || t('interpreter.statusError');
           return;
         }
 
-        campoComandoGerado.value = dados.comando || '';
+        resultadoComando.value = dados.comando || '';
         atualizarVariacoes(dados.variacoes || []);
-        statusInterprete.textContent = 'Interpretação concluída.';
+        interpretStatus.textContent = t('interpreter.statusSuccess');
+        document.getElementById('btnUsarComoPergunta').disabled = !(dados.comando && dados.comando.length > 0);
       } catch (erro) {
-        statusInterprete.textContent = 'Ocorreu um erro ao interpretar o comando.';
+        interpretStatus.textContent = t('interpreter.statusError');
+        document.getElementById('btnUsarComoPergunta').disabled = true;
         console.error(erro);
       }
     });
 
-    document.getElementById('btnResetarComando').addEventListener('click', () => {
-      document.getElementById('comandoNatural').value = '';
-      campoComandoGerado.value = '';
+    document.getElementById('btnResetInterpretar').addEventListener('click', () => {
+      document.getElementById('descricaoNatural').value = '';
+      resultadoComando.value = '';
       atualizarVariacoes([]);
-      statusInterprete.textContent = '';
+      interpretStatus.textContent = '';
+      document.getElementById('btnUsarComoPergunta').disabled = true;
     });
+
+    document.getElementById('btnUsarComoPergunta').addEventListener('click', () => {
+      const comandoTecnico = resultadoComando.value.trim();
+      if (!comandoTecnico) {
+        return;
+      }
+      const campoPerguntaPrincipal = document.getElementById('pergunta');
+      campoPerguntaPrincipal.value = comandoTecnico;
+      campoPerguntaPrincipal.scrollIntoView({ behavior: 'smooth' });
+      campoPerguntaPrincipal.focus();
+      document.getElementById('btnUsarComoPergunta').disabled = true;
+    });
+
+    applyTranslations();
   </script>
 </body>
 </html>

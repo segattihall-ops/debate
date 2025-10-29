@@ -1,9 +1,13 @@
 import os
 import json
-from flask import Flask, request, jsonify, render_template
+import re
+import time
+from flask import Flask, request, jsonify, render_template, abort
 import requests
 import concurrent.futures
 import sqlite3
+import numpy as np
+from numpy.linalg import norm
 
 app = Flask(__name__)
 
@@ -52,7 +56,17 @@ def init_db():
                   openrouter TEXT,
                   analise TEXT,
                   concordancia INTEGER,
+                  votos_sim INTEGER DEFAULT 0,
+                  votos_nao INTEGER DEFAULT 0,
                   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+
+    c.execute("PRAGMA table_info(history)")
+    colunas = {row[1] for row in c.fetchall()}
+    if 'votos_sim' not in colunas:
+        c.execute("ALTER TABLE history ADD COLUMN votos_sim INTEGER DEFAULT 0")
+    if 'votos_nao' not in colunas:
+        c.execute("ALTER TABLE history ADD COLUMN votos_nao INTEGER DEFAULT 0")
+
     conn.commit()
     conn.close()
 
@@ -65,19 +79,21 @@ def salvar_historico(pergunta, respostas, analise, concordancia):
               (pergunta, respostas.get('deepseek',''), respostas.get('grok',''),
                respostas.get('qwen3_max',''), respostas.get('openrouter',''),
                analise, concordancia))
+    last_id = c.lastrowid
     conn.commit()
     conn.close()
+    return last_id
 
 
 # ============================
 # Função genérica de chamada
 # ============================
-def call_api(url, api_key, model, prompt):
-    """Faz chamada com cabeçalhos válidos para OpenRouter e debug."""
+def call_api(url, api_key, model, prompt, max_retries=3, initial_delay=2):
+    """Faz chamada à API com lógica de re-tentativa e backoff exponencial."""
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-        "Referer": "http://localhost",   # ⚡ o nome correto é "Referer", não "HTTP-Referer"
+        "Referer": "http://localhost",
         "X-Title": "Moderador AI"
     }
 
@@ -87,14 +103,69 @@ def call_api(url, api_key, model, prompt):
         "temperature": 0.7
     }
 
-    try:
-        response = requests.post(url, headers=headers, json=data, timeout=30)
-        if response.status_code != 200:
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(url, headers=headers, json=data, timeout=30)
+            if response.status_code == 200:
+                conteudo = response.json()["choices"][0]["message"]["content"]
+                return conteudo
+            if 500 <= response.status_code < 600:
+                raise requests.exceptions.HTTPError(f"Erro de servidor: {response.status_code}")
             return f"[Erro {response.status_code}] {response.text}"
-        conteudo = response.json()["choices"][0]["message"]["content"]
-        return conteudo
-    except Exception as e:
-        return f"Erro: {e}"
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.HTTPError) as err:
+            if attempt < max_retries - 1:
+                delay = initial_delay * (2 ** attempt)
+                time.sleep(delay)
+                continue
+            return f"Erro: Falha persistente após {max_retries} tentativas. Último erro: {err}"
+        except Exception as err:
+            return f"Erro Crítico: {err}"
+
+    return "Erro: Falha na comunicação após todas as tentativas."
+
+
+def extrair_json(texto):
+    if not texto:
+        return "{}"
+    match = re.search(r"\{.*\}", texto, re.DOTALL)
+    return match.group(0) if match else "{}"
+
+
+def get_semantic_vector_proxy(texto):
+    prompt = f"""
+    Analise exclusivamente o texto a seguir. Retorne apenas um objeto JSON
+    com a chave "vector" contendo um array com cinco valores float entre 0.0 e 1.0.
+    Cada posição representa respectivamente: Fato, Opinião, Linguagem Técnica, Detalhe, Conclusão.
+    Não inclua explicações adicionais.
+
+    TEXTO: <resposta>{texto}</resposta>
+    """
+
+    resposta_json_str = call_api(
+        OPENROUTER_API_URL,
+        OPENROUTER_API_KEY,
+        OPENROUTER_MODEL,
+        prompt,
+    )
+
+    try:
+        bloco_json = extrair_json(resposta_json_str)
+        dados = json.loads(bloco_json)
+        vetor = dados.get("vector")
+        if isinstance(vetor, list) and len(vetor) == 5:
+            return np.array(vetor, dtype=float)
+    except Exception as err:
+        print(f"Erro ao gerar vetor semântico: {err}")
+    return None
+
+
+def cosine_similarity(A, B):
+    if A is None or B is None:
+        return 0.0
+    denominador = norm(A) * norm(B)
+    if denominador == 0:
+        return 0.0
+    return float(np.dot(A, B) / denominador)
 
 # ============================
 # Rotinas de análise
@@ -126,12 +197,27 @@ Siga estas instruções:
 
 
 def calcular_concordancia(respostas):
-    respostas_text = [r for r in respostas.values() if r and not r.startswith("Erro")]
-    if len(respostas_text) < 2:
+    respostas_validas = [r for r in respostas.values() if r and not r.startswith(("Erro", "[Erro"))]
+    if len(respostas_validas) < 2:
         return 0
-    base = respostas_text[0].lower()
-    iguais = sum(1 for r in respostas_text if base[:100] in r.lower() or r.lower()[:100] in base)
-    return int((iguais / len(respostas_text)) * 100)
+
+    vetores = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(respostas_validas)) as executor:
+        futuros = [executor.submit(get_semantic_vector_proxy, texto) for texto in respostas_validas]
+        for futuro in concurrent.futures.as_completed(futuros):
+            vetor = futuro.result()
+            if vetor is not None:
+                vetores.append(vetor)
+
+    if len(vetores) < 2:
+        return 0
+
+    base = vetores[0]
+    similaridades = [cosine_similarity(base, vetor) for vetor in vetores[1:]]
+    if not similaridades:
+        return 0
+    media = np.mean(similaridades)
+    return int(max(0, min(media, 1)) * 100)
 
 
 def gerar_interpretacao(texto, idioma, entonacao):
@@ -211,7 +297,7 @@ def index():
 def admin():
     conn = sqlite3.connect('history.db')
     c = conn.cursor()
-    c.execute("SELECT id, pergunta, analise, concordancia, timestamp FROM history ORDER BY id DESC LIMIT 50")
+    c.execute("SELECT id, pergunta, analise, concordancia, timestamp, votos_sim, votos_nao FROM history ORDER BY id DESC LIMIT 50")
     rows = c.fetchall()
     conn.close()
     return render_template("admin.html", rows=rows)
@@ -244,18 +330,19 @@ def analisar():
 
         for nome, future in futures.items():
             try:
-                respostas[nome] = future.result(timeout=35)
+                respostas[nome] = future.result(timeout=45)
             except Exception as e:
                 respostas[nome] = f"Erro em {nome}: {e}"
 
     analise = gerar_analise(pergunta, respostas)
     concordancia = calcular_concordancia(respostas)
-    salvar_historico(pergunta, respostas, analise, concordancia)
+    registro_id = salvar_historico(pergunta, respostas, analise, concordancia)
 
     return jsonify({
         "respostas": respostas,
         "analise": analise,
-        "concordancia": concordancia
+        "concordancia": concordancia,
+        "registro_id": registro_id
     })
 
 
@@ -273,6 +360,63 @@ def interpretar():
     return jsonify(resultado)
 
 
+@app.route("/votar", methods=["POST"])
+def votar():
+    data = request.json or {}
+    registro_id = data.get("id")
+    voto_tipo = data.get("voto")
+
+    if not registro_id or voto_tipo not in {"sim", "nao"}:
+        return jsonify({"success": False, "message": "ID ou voto inválido."}), 400
+
+    coluna = "votos_sim" if voto_tipo == "sim" else "votos_nao"
+
+    try:
+        conn = sqlite3.connect('history.db')
+        c = conn.cursor()
+        c.execute(f"UPDATE history SET {coluna} = {coluna} + 1 WHERE id = ?", (registro_id,))
+        if c.rowcount == 0:
+            conn.close()
+            return jsonify({"success": False, "message": "Registro não encontrado."}), 404
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as err:
+        return jsonify({"success": False, "message": str(err)}), 500
+
+
+@app.route("/history/<int:registro_id>")
+def obter_historico(registro_id):
+    conn = sqlite3.connect('history.db')
+    c = conn.cursor()
+    c.execute(
+        """SELECT id, pergunta, deepseek, grok, qwen, openrouter, analise, concordancia, votos_sim, votos_nao, timestamp
+            FROM history WHERE id = ?""",
+        (registro_id,),
+    )
+    row = c.fetchone()
+    conn.close()
+
+    if not row:
+        abort(404)
+
+    return jsonify({
+        "id": row[0],
+        "pergunta": row[1],
+        "deepseek": row[2],
+        "grok": row[3],
+        "qwen": row[4],
+        "openrouter": row[5],
+        "analise": row[6],
+        "concordancia": row[7],
+        "votos_sim": row[8],
+        "votos_nao": row[9],
+        "timestamp": row[10],
+    })
+
+
+init_db()
+
+
 if __name__ == "__main__":
-    init_db()
     app.run(debug=True)
