@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel do Moderador</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-gray-100">
+  <div class="max-w-6xl mx-auto py-10 px-6">
+    <h1 class="text-3xl font-bold text-yellow-400 mb-6">📊 Painel do Moderador</h1>
+    <a href="/" class="text-yellow-400 underline">← Voltar</a>
+
+    <table class="min-w-full mt-6 bg-gray-800 rounded-lg overflow-hidden">
+      <thead class="bg-gray-700">
+        <tr>
+          <th class="px-4 py-2 text-left">ID</th>
+          <th class="px-4 py-2 text-left">Pergunta</th>
+          <th class="px-4 py-2 text-left">Concordância</th>
+          <th class="px-4 py-2 text-left">Data</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr class="border-b border-gray-700 hover:bg-gray-700">
+          <td class="px-4 py-2">{{ row[0] }}</td>
+          <td class="px-4 py-2 text-yellow-200">{{ row[1] }}</td>
+          <td class="px-4 py-2">{{ row[3] }}%</td>
+          <td class="px-4 py-2 text-sm text-gray-400">{{ row[4] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
