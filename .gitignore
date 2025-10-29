@@ -2,3 +2,4 @@ moderador-ai/__pycache__/
 moderador-ai/*.pyc
 moderador-ai/history.db
 moderador-ai/.env
+node_modules/

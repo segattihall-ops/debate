@@ -2,6 +2,7 @@ import os
 import json
 import re
 import time
+from pathlib import Path
 from flask import Flask, request, jsonify, render_template, abort
 import requests
 import concurrent.futures
@@ -10,6 +11,30 @@ import numpy as np
 from numpy.linalg import norm
 
 app = Flask(__name__)
+
+
+def load_env_file():
+    """Carrega variáveis de ambiente de um arquivo .env local, se disponível."""
+    env_path = Path(__file__).resolve().parent / ".env"
+    if not env_path.exists():
+        return
+
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+load_env_file()
+
 
 # ============================
 # Configurações de chaves de API
