@@ -1,0 +1,9 @@
+{
+  "name": "moderador-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ferramentas de desenvolvimento para o Moderador de IAs",
+  "scripts": {
+    "dev": "pip install -r requirements.txt && python -m flask --app moderador-ai.app --debug run"
+  }
+}

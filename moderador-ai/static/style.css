@@ -1,0 +1,9 @@
+body { font-family: "Segoe UI", Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 0; }
+.container { max-width: 900px; margin: 40px auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+h2 { color: #222; text-align: center; }
+label { display: block; font-weight: 500; margin-top: 15px; }
+input[type="text"] { width: 100%; margin: 10px 0 0 0; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+button { display: block; width: 100%; padding: 12px; margin-top: 15px; background: #0078d7; border: none; color: white; font-size: 16px; border-radius: 5px; cursor: pointer; }
+button:hover { background: #005fa3; }
+pre { background: #f7f7f7; padding: 15px; border-radius: 5px; margin-top: 15px; white-space: pre-wrap; border-left: 4px solid #0078d7; }
+#respostas > div { margin-bottom: 10px; font-size: 15px; }
